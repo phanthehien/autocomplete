@@ -1,109 +1,195 @@
 <template>
   <div class="container">
-    <input 
-      class="autocomplete-input"
-      placeholder="Try Vietnam"
-      aria-label=""
-    >
-      <ul class="autocomplete-result" />
+    <span class="autocomplete">
+      <span class="autocomplete-icon">
+        <search-icon :style="{ width: '26px', height: '26px' }" />
+      </span>
+      <input
+        class="autocomplete-input"
+        v-model="value"
+        placeholder="Try Vietnam"
+        @keydown="handleKeyDown"
+        @focus="handleFocus"
+        aria-label=""
+      >
+    </span>
+    <ul class="autocomplete-result">
+      <li
+        :key="`${item}_${index}`"
+        v-for="(item, index) in results"
+        class="autocomplete-resultItem"
+      >
+        {{ item }}
+      </li>
+    </ul>
   </div>
 </template>
 
 <script lang="js">
+import SearchIcon from '@/assets/search-icon.svg';
+
 export default {
-  
+  name: 'AutoComplete',
+  props: {
+    search: {
+      type: Function
+    }
+  },
+  components: {
+    SearchIcon
+  },
+  data() {
+    return {
+      darkMode: true,
+      results: [],
+      selectedIndex: -1,
+      value: null
+    }
+  },
+  watch: {
+    value: function(val) {
+      this.updateResults(val);
+    },
+  },
+  methods: {
+    handleFocus(event) {
+      const { value } = event.target
+      this.updateResults(value)
+      this.value = value
+    },
+
+    handleKeyDown(event) {
+      const { key } = event
+      console.log('value: ', event.target.value);
+
+      switch (key) {
+        case 'Enter': {
+          this.selectResult(this.value);
+          break
+        }
+        case 'Esc': // IE/Edge
+        case 'Escape': {
+          this.hideResults();
+          break
+        }
+        default:
+          return
+      }
+    },
+
+    selectResult() {
+      const selectedResult = this.results[this.selectedIndex];
+      if (selectedResult) {
+        this.setValue(selectedResult)
+      }
+      this.hideResults()
+    },
+
+    hideResults () {
+      this.selectedIndex = -1;
+      this.results = [];
+    },
+
+    updateResults(value) {
+      this.results = this.search(value);
+      console.log('results', this.results);
+
+      if (this.results.length === 0) {
+        this.hideResults();
+        return;
+      }
+    }
+  }
 }
 </script>
 
-<style scoped>
-.autocomplete-input {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  width: 100%;
-  padding: 12px 12px 12px 48px;
-  box-sizing: border-box;
+<style scoped lang="scss">
+
+$icon-color: #484848;
+$result-backgroundColor: transparent;
+
+.autocomplete {
+  display: flex;
   position: relative;
-  font-size: 16px;
-  line-height: 1.5;
-  flex: 1;
-  background-color: #eee;
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTEiIGN5PSIxMSIgcj0iOCIvPjxwYXRoIGQ9Ik0yMSAyMWwtNC00Ii8+PC9zdmc+');
-  background-repeat: no-repeat;
-  background-position: 12px center;
-}
+  height: 60px;
+  
+  * {
+    font-family: 'Roboto', sans-serif;
+  }
 
-.autocomplete-input:focus,
-.autocomplete-input[aria-expanded="true"] {
-  border-color: rgba(0, 0, 0, 0.12);
-  background-color: #fff;
-  outline: none;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.16);
-}
+  &-icon {
+    position: absolute;
+    z-index: 1;
+    top: 16px;
+    left: 18px;
+    color: $icon-color;
 
-[data-position="below"] .autocomplete-input[aria-expanded="true"] {
-  border-bottom-color: transparent;
-  border-radius: 8px 8px 0 0;
-}
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+  }
 
-[data-position="above"] .autocomplete-input[aria-expanded="true"] {
-  border-top-color: transparent;
-  border-radius: 0 0 8px 8px;
-  z-index: 2;
-}
+  &-input {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 20px;
+    line-height: 23px;
+    color: rgba(72, 72, 72, 0.7);
 
-/* Loading spinner */
-.autocomplete[data-loading="true"]::after {
-  content: "";
-  border: 3px solid rgba(0, 0, 0, 0.12);
-  border-right: 3px solid rgba(0, 0, 0, 0.48);
-  border-radius: 100%;
-  width: 20px;
-  height: 20px;
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  animation: rotate 1s infinite linear;
-}
+    border: 1px solid #eee;
+    border-radius: 8px;
+    width: 100%;
+    padding: 12px 12px 12px 60px;
+    box-sizing: border-box;
+    position: relative;
+    font-size: 16px;
+    line-height: 1.5;
+    flex: 1;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: 12px center;
 
-.autocomplete-result-list {
-  margin: 0;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  padding: 0;
-  box-sizing: border-box;
-  max-height: 296px;
-  overflow-y: auto;
-  background: #fff;
-  list-style: none;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.16);
-}
+    &:focus, [aria-expanded="true"] {
+      border-color: rgba(0, 0, 0, 0.12);
+      background-color: #F8F8F8;
+      outline: none;
+      border-radius: 8px 8px 0 0;
+    }
+  }
 
-[data-position="below"] .autocomplete-result-list {
-  margin-top: -1px;
-  border-top-color: transparent;
-  border-radius: 0 0 8px 8px;
-  padding-bottom: 8px;
-}
+  &-result {
+    cursor: default;
+    margin: 0;
+    padding: 0px;
+    background-repeat: no-repeat;
+    background-position: 12px center;
+    background-color: $result-backgroundColor;
+    border-radius: 0 0 4px 4px;
+    border: 0px solid white;
+    border-top: 0px;
 
-[data-position="above"] .autocomplete-result-list {
-  margin-bottom: -1px;
-  border-bottom-color: transparent;
-  border-radius: 8px 8px 0 0;
-  padding-top: 8px;
-}
+    &:hover {
+      box-shadow: 0 0px 0px rgba(0, 0, 0, 0.16);
+    }
+  }
 
-/* Single result item */
-.autocomplete-result {
-  cursor: default;
-  padding: 12px 12px 12px 48px;
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTEiIGN5PSIxMSIgcj0iOCIvPjxwYXRoIGQ9Ik0yMSAyMWwtNC00Ii8+PC9zdmc+');
-  background-repeat: no-repeat;
-  background-position: 12px center;
-}
+  &-resultItem {
+    background-color: white;
+    padding: 15px 20px 15px 20px;
+    list-style: none;
+    font-family: Roboto;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 18px;
+    line-height: 21px;
 
-.autocomplete-result:hover,
-.autocomplete-result[aria-selected="true"] {
-  background-color: rgba(0, 0, 0, 0.06);
+    &:hover {
+      background-color: #484848;
+      cursor: pointer;
+      color: white;
+    }
+  }
 }
 
 @keyframes rotate {
